@@ -1,4 +1,4 @@
-# SDMS
+# Student Data Management System
 college java project
 
 ## 🗃️ Import the Database
