@@ -4,6 +4,8 @@
  */
 package com.wxm.student_data_management_system;
 
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.GraphicsEnvironment;
@@ -13,7 +15,10 @@ import java.sql.*;
 import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 /**
  *
@@ -67,6 +72,7 @@ public class studentData_main extends javax.swing.JFrame {
     
     public void loadDB() {
         DefaultTableModel model = (DefaultTableModel) tblStudents.getModel();
+
         model.setRowCount(0); // Clear existing rows
 
         try {
@@ -86,11 +92,44 @@ public class studentData_main extends javax.swing.JFrame {
 
                 model.addRow(new Object[]{id, name, age, gender, address, contact, college, program});
             }
+            
+            int[] wrapColumns = {0, 1, 2, 3, 4, 5, 6, 7}; // Name, Address, College, Program
+
+            for (int col : wrapColumns) {
+                tblStudents.getColumnModel().getColumn(col).setCellRenderer(new TextAreaRenderer());
+            }
+
+            // ✅ Do this after loading data into the table
+            adjustRowHeights(tblStudents, wrapColumns);
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage());
         }
     }
+    
+    private void adjustRowHeights(JTable table, int[] wrapCols) {
+        for (int row = 0; row < table.getRowCount(); row++) {
+            int maxHeight = table.getRowHeight(); // or start from 16
+
+            for (int col : wrapCols) {
+                TableCellRenderer renderer = table.getCellRenderer(row, col);
+                Component comp = renderer.getTableCellRendererComponent(
+                    table, table.getValueAt(row, col), false, false, row, col
+                );
+
+                // 🔑 This forces proper line wrapping
+                comp.setBounds(0, 0, table.getColumnModel().getColumn(col).getWidth(), Integer.MAX_VALUE);
+
+                Dimension prefSize = comp.getPreferredSize();
+                maxHeight = Math.max(maxHeight, prefSize.height);
+            }
+
+            if (table.getRowHeight(row) != maxHeight) {
+                table.setRowHeight(row, maxHeight);
+            }
+        }
+    }
+
     
     private void addFont() {
         try {
@@ -198,7 +237,10 @@ public class studentData_main extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        tblStudents.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         tblStudents.setRowHeight(30);
+        tblStudents.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        tblStudents.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         tblStudents.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tblStudentsMouseClicked(evt);
@@ -793,6 +835,34 @@ public class studentData_main extends javax.swing.JFrame {
                 new studentData_main().setVisible(true);
             }
         });
+    }
+    
+    class TextAreaRenderer extends JTextArea implements TableCellRenderer {
+
+        public TextAreaRenderer() {
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+
+            setText(value == null ? "" : value.toString());
+            setSize(table.getColumnModel().getColumn(column).getWidth(), Short.MAX_VALUE);
+
+            if (isSelected) {
+                setForeground(table.getSelectionForeground());
+                setBackground(table.getSelectionBackground());
+            } else {
+                setForeground(table.getForeground());
+                setBackground(table.getBackground());
+            }
+
+            setFont(table.getFont());
+            return this;
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
